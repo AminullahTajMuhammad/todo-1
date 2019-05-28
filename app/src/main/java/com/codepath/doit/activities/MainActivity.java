@@ -1,5 +1,6 @@
 package com.codepath.doit.activities;
 
+import android.annotation.SuppressLint;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;

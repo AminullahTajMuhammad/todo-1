@@ -21,6 +21,13 @@
             android:name="AA_MODELS"
             android:value="com.codepath.doit.models.Item" />
 
+        <provider
+            android:name="com.activeandroid.content.ContentProvider"
+            android:authorities="com.codepath.doit"
+            android:enabled="true"
+            android:exported="false">
+        </provider>
+
         <activity android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

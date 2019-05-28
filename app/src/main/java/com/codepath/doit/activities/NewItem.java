@@ -1,5 +1,7 @@
 package com.codepath.doit.activities;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -21,16 +23,23 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.work.Data;
+
 import com.codepath.doit.R;
+import com.codepath.doit.models.NotificationConstants;
 import com.codepath.doit.models.Priority;
+import com.codepath.doit.utils.NotificationHandlerUtils;
 import com.codepath.doit.utils.Utils;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 import com.wdullaer.materialdatetimepicker.time.RadialPickerLayout;
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 public class NewItem extends AppCompatActivity implements View.OnClickListener,
         TimePickerDialog.OnTimeSetListener,
@@ -42,6 +51,8 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
     private Spinner spinner;
 
     int position;
+    private String currentTime = "";
+    private String currentDate = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +71,7 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
         String subject = getIntent().getStringExtra("subject");
         position = getIntent().getIntExtra("position", -1);
         Priority priority = (Priority) getIntent().getSerializableExtra("priority");
+
         Date date = (Date) getIntent().getSerializableExtra("date");
         String time = getIntent().getStringExtra("time");
 
@@ -113,7 +125,9 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
                 dpd.show(getFragmentManager(), "Datepickerdialog");
             }
         });
+
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -154,6 +168,7 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
         String minuteString = minute < 10 ? "0"+minute : ""+minute;
         String time = hourString+":"+minuteString;
         timeTextView.setText(time);
+        currentTime = time;
     }
 
     @Override
@@ -161,6 +176,51 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
         String date = (++monthOfYear)+"/"+dayOfMonth+"/"+year;
         Log.w("MyApp", "onDateSet: " + date);
         dateTextView.setText(date);
+        currentDate = date;
+    }
+
+    private int convertDateAndTimeIntoMinutes() {
+        long timeInMinutes = 0;
+        String totalTime = currentDate + " " + currentTime;
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm");
+        try {
+
+            String currentDateAndTime = simpleDateFormat.format(new Date());
+
+            Date currentDate1 = simpleDateFormat.parse(currentDateAndTime);
+            Date endDate= simpleDateFormat.parse(totalTime);
+
+            timeInMinutes = getTimeDifferenceInMinutes(currentDate1, endDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return (int) timeInMinutes;
+    }
+
+    public long getTimeDifferenceInMinutes(Date startDate, Date endDate) {
+        //milliseconds
+        long different = endDate.getTime() - startDate.getTime();
+
+        long secondsInMilli = 1000;
+        long minutesInMilli = secondsInMilli * 60;
+        long hoursInMilli = minutesInMilli * 60;
+        long daysInMilli = hoursInMilli * 24;
+
+        long elapsedDays = different / daysInMilli;
+        different = different % daysInMilli;
+
+        long elapsedHours = different / hoursInMilli;
+        different = different % hoursInMilli;
+
+        long elapsedMinutes = different / minutesInMilli;
+        different = different % minutesInMilli;
+
+        long elapsedSeconds = different / secondsInMilli;
+
+        return elapsedMinutes;
+
     }
 
     public void clearDate(View view) {
@@ -186,6 +246,22 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
             Priority p = (Priority) spinner.getSelectedItem();
             data.putExtra("Priority", p);
             setResult(200, data);
+
+            // set Notification
+            String tag = generateKey();
+
+            int minutesBeforeAlert = convertDateAndTimeIntoMinutes();
+            long alertTime = getAlertTime(minutesBeforeAlert) - System.currentTimeMillis();
+            long current = System.currentTimeMillis();
+
+            Log.d("TAG", "Alert time - " + alertTime + "Current time " + current);
+
+            int random = (int )(Math.random() * 50 + 1);
+
+            Data notificationData = createWorkInputData(etNewTask.getText().toString(), NotificationConstants.TEXT, random);
+
+            NotificationHandlerUtils.scheduleReminder(alertTime, notificationData, tag);
+
             this.finish();
         }
     }
@@ -254,4 +330,25 @@ public class NewItem extends AppCompatActivity implements View.OnClickListener,
             startActivity(Intent.createChooser(sharingIntent, "Share via"));
         }
     }
+
+    private Data createWorkInputData(String title, String text, int id){
+        return new Data.Builder()
+                .putString(NotificationConstants.EXTRA_TITLE, title)
+                .putString(NotificationConstants.EXTRA_TEXT, text)
+                .putInt(NotificationConstants.EXTRA_ID, id)
+                .build();
+    }
+
+
+    private long getAlertTime(int userInput){
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, userInput);
+        return cal.getTimeInMillis();
+    }
+
+
+    private String generateKey(){
+        return UUID.randomUUID().toString();
+    }
+
 }

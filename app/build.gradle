@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 28
     buildToolsVersion "24.0.2"
 
     defaultConfig {
         applicationId "com.codepath.doit"
         minSdkVersion 21
-        targetSdkVersion 24
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
@@ -28,11 +28,16 @@ repositories {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:24.2.0'
-    compile 'commons-io:commons-io:2.5'
-    compile 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
-    compile 'com.afollestad.material-dialogs:core:0.9.0.1'
-    compile 'com.afollestad.material-dialogs:commons:0.9.0.1'
-    compile 'com.android.support:design:24.2.0'
-    compile 'com.wdullaer:materialdatetimepicker:2.5.0'
+    //noinspection GradleCompatible
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'commons-io:commons-io:2.5'
+
+    implementation "android.arch.work:work-runtime:1.0.1"
+    implementation "android.arch.work:work-firebase:1.0.0-alpha11"
+
+    implementation 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
+    implementation'com.afollestad.material-dialogs:core:0.9.0.1'
+    implementation 'com.afollestad.material-dialogs:commons:0.9.0.1'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.wdullaer:materialdatetimepicker:2.5.0'
 }
